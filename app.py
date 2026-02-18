@@ -195,11 +195,12 @@ with st.sidebar:
 
     st.markdown(f"<div style='font-weight:600; font-size:0.82rem; color:{COLORS['gray']}; text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 8px 0;'>Core Assumptions</div>", unsafe_allow_html=True)
 
-    failure_prob = st.slider(
-        "IP Warmup Failure Probability",
+    completion_rate = st.slider(
+        "% of IP Warmup Completed",
         min_value=0, max_value=100, value=50, step=5,
-        help="Likelihood that IP warmup fails and emails hit spam"
-    ) / 100
+        help="Expected completion level of IP warmup process (higher = better deliverability)"
+    )
+    failure_prob = (100 - completion_rate) / 100
 
     recovery_months = st.slider(
         "Recovery Window (months)",
@@ -439,20 +440,20 @@ with rv2:
 # EXPECTED VALUE ROW (probability-weighted)
 # ═══════════════════════════════════════════════════════════════════════════
 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-st.markdown(f"<div style='font-size:0.78rem; font-weight:600; color:{COLORS['gray']}; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;'>Probability-Weighted Expected Impact ({failure_prob:.0%} failure rate)</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='font-size:0.78rem; font-weight:600; color:{COLORS['gray']}; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;'>Probability-Weighted Expected Impact ({completion_rate}% warmup completion)</div>", unsafe_allow_html=True)
 
 e1, e2 = st.columns(2)
 with e1:
     st.markdown(f"""<div class="hero-card">
         <div class="hero-label">Expected In-Month Revenue at Risk</div>
         <div class="hero-value text-dark">${abs(expected_in_month_impact):,.0f}</div>
-        <div class="hero-sub">{failure_prob:.0%} prob &times; ${rev_in_month:,.0f} in-month impact</div>
+        <div class="hero-sub">{completion_rate}% complete &rarr; {failure_prob:.0%} impact &times; ${rev_in_month:,.0f}</div>
     </div>""", unsafe_allow_html=True)
 with e2:
     st.markdown(f"""<div class="hero-card">
         <div class="hero-label">Expected LTV Revenue at Risk</div>
         <div class="hero-value text-red">${abs(expected_revenue_impact):,.0f}</div>
-        <div class="hero-sub">{failure_prob:.0%} prob &times; ${rev_ltv:,.0f} LTV impact</div>
+        <div class="hero-sub">{completion_rate}% complete &rarr; {failure_prob:.0%} impact &times; ${rev_ltv:,.0f}</div>
     </div>""", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -493,17 +494,17 @@ with c3:
 # ═══════════════════════════════════════════════════════════════════════════
 st.markdown("<div style='height:36px'></div>", unsafe_allow_html=True)
 st.markdown(f"<div style='font-size:1.15rem; font-weight:700; color:{COLORS['dark']};'>Breakeven Analysis</div>", unsafe_allow_html=True)
-st.markdown(f"<div style='font-size:0.83rem; color:{COLORS['gray']}; margin-bottom:16px;'>At what failure probability does the Iterable extension pay for itself?</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='font-size:0.83rem; color:{COLORS['gray']}; margin-bottom:16px;'>At what failure rate does the Iterable extension pay for itself?</div>", unsafe_allow_html=True)
 
 breakeven_prob_ltv = iterable_cost / rev_ltv if rev_ltv != 0 else 1.0
 
 be1, be2, be3 = st.columns(3)
 with be1:
-    st.metric("Breakeven Probability (LTV)", f"{min(breakeven_prob_ltv, 1.0):.0%}")
+    st.metric("Breakeven Failure Rate", f"{min(breakeven_prob_ltv, 1.0):.0%}")
 with be2:
-    st.metric("Your Assumption", f"{failure_prob:.0%}")
+    st.metric("Your Warmup Completion", f"{completion_rate}%")
 with be3:
-    pass
+    st.metric("Your Implied Failure Rate", f"{failure_prob:.0%}")
 
 probs = np.arange(0, 1.01, 0.05)
 
